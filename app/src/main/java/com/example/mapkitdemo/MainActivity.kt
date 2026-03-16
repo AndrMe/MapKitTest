@@ -12,10 +12,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.mapkitdemo.ui.theme.MapKitDemoTheme
+import com.yandex.mapkit.MapKitFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        MapKitFactory.setApiKey(BuildConfig.MAPKIT_API_KEY)
+        MapKitFactory.initialize(this)
         enableEdgeToEdge()
         setContent {
             MapKitDemoTheme {
