@@ -1,16 +1,16 @@
 package com.example.mapkitdemo
 
+import com.example.mapkitdemo.ui.navigation.NavGraph
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
 import com.example.mapkitdemo.ui.theme.MapKitDemoTheme
 import com.yandex.mapkit.MapKitFactory
 
@@ -21,12 +21,10 @@ class MainActivity : ComponentActivity() {
         MapKitFactory.initialize(this)
         enableEdgeToEdge()
         setContent {
-            MapKitDemoTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+            MapKitDemoTheme() {
+                Surface() {
+                    val navController = rememberNavController()
+                    NavGraph(navController = navController)
                 }
             }
         }
