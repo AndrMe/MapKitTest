@@ -15,14 +15,18 @@ import com.example.mapkitdemo.ui.theme.MapKitDemoTheme
 import com.yandex.mapkit.MapKitFactory
 
 class MainActivity : ComponentActivity() {
+    override fun onStop() {
+        MapKitFactory.getInstance().onStop()
+        super.onStop()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        MapKitFactory.setApiKey(BuildConfig.MAPKIT_API_KEY)
-        MapKitFactory.initialize(this)
+        MapKitFactory.getInstance().onStart()
         enableEdgeToEdge()
         setContent {
-            MapKitDemoTheme() {
-                Surface() {
+            MapKitDemoTheme {
+                Surface {
                     val navController = rememberNavController()
                     NavGraph(navController = navController)
                 }
