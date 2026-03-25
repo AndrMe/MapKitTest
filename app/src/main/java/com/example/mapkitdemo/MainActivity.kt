@@ -1,5 +1,7 @@
 package com.example.mapkitdemo
 
+import android.Manifest
+import android.content.pm.PackageManager
 import com.example.mapkitdemo.ui.navigation.NavGraph
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -23,6 +25,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         MapKitFactory.getInstance().onStart()
+        val PERMISSION_REQUEST_CODE = 100
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_REQUEST_CODE)
+        }
         enableEdgeToEdge()
         setContent {
             MapKitDemoTheme {

@@ -1,4 +1,4 @@
-package com.example.mapkitdemo.ui.screens
+package com.example.mapkitdemo.ui.map
 
 import android.content.Context
 import android.graphics.PointF
@@ -10,10 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,21 +33,25 @@ fun MapScreen(
     onEvent: (MapEvent) -> Unit
 ) {
     val context = LocalContext.current
+    val mapView = remember { MapView(context) }
 
-    val mapView = remember {
-        MapView(context)
+    LaunchedEffect(state.placemarks, state.cameraPosition) {
+        if (state.placemarks.isNotEmpty()) {
+            val lastPoint = state.placemarks.last()
+            mapView.mapWindow.map.move(
+                CameraPosition(lastPoint, 15f, 0f, 0f)
+            )
+        } else {
+            mapView.mapWindow.map.move(
+                CameraPosition(state.cameraPosition, state.zoom, 0f, 0f)
+            )
+        }
     }
 
-
-
     DisposableEffect(Unit) {
-        Log.d("recomp", "recomp")
         val map = mapView.mapWindow.map
-
-            //Обработака нажатий, взаимодействия с кратой
         val inputListener = object : InputListener {
             override fun onMapTap(map: Map, point: Point) {}
-
             override fun onMapLongTap(map: Map, point: Point) {
                 onEvent(MapEvent.LongTap(point))
             }
@@ -58,31 +59,15 @@ fun MapScreen(
         map.addInputListener(inputListener)
         mapView.onStart()
         onDispose {
-            onEvent(
-                MapEvent.CameraSave(
-                    map.cameraPosition.target,
-                    map.cameraPosition.zoom
-                )
-            )
+            onEvent(MapEvent.CameraSave(map.cameraPosition.target, map.cameraPosition.zoom))
             map.removeInputListener(inputListener)
             mapView.onStop()
         }
     }
+
     Box(modifier = Modifier.fillMaxSize()) {
-        AndroidView(
-            factory = { mapView },
-            update = {}
-        )
-        LaunchedEffect(state.cameraPosition, state.zoom) {
-            mapView.mapWindow.map.move(
-                CameraPosition(
-                    state.cameraPosition,
-                    state.zoom,
-                    0f,
-                    0f
-                )
-            )
-        }
+        AndroidView(factory = { mapView }, update = {})
+
         if (state.lastPlacemark != null) {
             FloatingActionButton(
                 onClick = { onEvent(MapEvent.ConfirmPlacemark(mapView.mapWindow.map.cameraPosition.zoom.toInt())) },
@@ -90,36 +75,55 @@ fun MapScreen(
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = "Подтвердить"
-                )
+                Icon(Icons.Default.Check, contentDescription = "Подтвердить")
             }
         }
+
         val mapObjects = mapView.mapWindow.map.mapObjects
         mapObjects.clear()
 
-        state.lastPlacemark?.let {
-            addMarker(mapObjects, it, context)
+        // Сохранённые точки – последняя отображается специальной иконкой
+        state.placemarks.forEachIndexed { index, point ->
+            addMarker(
+                mapObjects = mapObjects,
+                point = point,
+                context = context,
+                isSaved = true,
+                isLast = (index == state.placemarks.lastIndex)
+            )
+        }
+
+        // Текущий выбранный маркер (временный)
+        state.lastPlacemark?.let { point ->
+            addMarker(
+                mapObjects = mapObjects,
+                point = point,
+                context = context,
+                isSaved = false,
+                isLast = false
+            )
         }
     }
-
 }
 
-//Добавление маркеров
 private fun addMarker(
     mapObjects: MapObjectCollection,
     point: Point,
-    context: Context
+    context: Context,
+    isSaved: Boolean,
+    isLast: Boolean
 ): PlacemarkMapObject {
-    mapObjects.clear()
+    val iconRes = when {
+        isLast -> R.drawable.location_last
+        isSaved -> R.drawable.location
+        else -> R.drawable.location_current
+    }
     return mapObjects.addPlacemark().apply {
         geometry = point
-        setIcon(ImageProvider.fromResource(context, R.drawable.location), IconStyle().apply {
+        setIcon(ImageProvider.fromResource(context, iconRes), IconStyle().apply {
             anchor = PointF(0.5f, 0.5f)
             flat = false
-            scale = 0.1f
+            scale = 0.25f
         })
     }
-
 }

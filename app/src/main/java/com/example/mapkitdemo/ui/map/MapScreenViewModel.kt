@@ -1,10 +1,10 @@
-package com.example.mapkitdemo.ui.screens
+package com.example.mapkitdemo.ui.map
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mapkitdemo.ui.startScreen.AddressPoint
 import com.yandex.mapkit.geometry.Point
-import com.yandex.mapkit.search.Response
 import com.yandex.mapkit.search.SearchFactory
 import com.yandex.mapkit.search.SearchManagerType
 import com.yandex.mapkit.search.SearchOptions
@@ -31,6 +31,10 @@ class MapViewModel : ViewModel() {
     private val searchManager = SearchFactory.getInstance()
         .createSearchManager(SearchManagerType.COMBINED)
 
+    fun setInitialPoints(points: List<AddressPoint>) {
+        _state.update { it.copy(placemarks = points.map { Point(it.latitude, it.longitude) }) }
+    }
+
     fun reducer(event: MapEvent) {
         when(event) {
             is MapEvent.LongTap -> {
@@ -45,32 +49,32 @@ class MapViewModel : ViewModel() {
                     if (point != null) {
                         val address = searchAddress(point)
                         _effect.emit(MapEffect.Confirmed(point, address))
+                        _state.update { it.copy(lastPlacemark = null) }
                     }
                 }
             }
+
         }
     }
-
-    // Асинхронный поиск адреса По координате нажатия
     private suspend fun searchAddress(point: Point): String {
         val options = SearchOptions().apply {
             searchTypes = SearchType.GEO.value
         }
         return suspendCancellableCoroutine { cont ->
-        val session = searchManager.submit(point, 16, options, object : Session.SearchListener {
-            override fun onSearchResponse(response: Response) {
-                val first = response.collection.children.firstOrNull()?.obj
-                val address = first?.name ?: first?.descriptionText ?: ""
-                cont.resume(address)
+            val session = searchManager.submit(point, 16, options, object : Session.SearchListener {
+                override fun onSearchResponse(response: com.yandex.mapkit.search.Response) {
+                    val first = response.collection.children.firstOrNull()?.obj
+                    val address = first?.name ?: first?.descriptionText ?: ""
+                    cont.resume(address)
+                }
+                override fun onSearchError(error: Error) {
+                    Log.e("MapViewModel", "Search error: $error")
+                    cont.resume("")
+                }
+            })
+            cont.invokeOnCancellation {
+                session.cancel()
             }
-            override fun onSearchError(error: Error) {
-                Log.e("MapViewModel", "Search error: $error")
-                cont.resume("")
-            }
-        })
-        cont.invokeOnCancellation {
-            session.cancel()
         }
-    }
     }
 }
