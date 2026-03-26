@@ -19,7 +19,6 @@ import com.example.mapkitdemo.ui.startScreen.AddressPoint
 import com.example.mapkitdemo.ui.startScreen.StartEvent
 import com.example.mapkitdemo.ui.startScreen.StartScreen
 import com.example.mapkitdemo.ui.startScreen.StartViewModel
-import com.yandex.mapkit.geometry.Point
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -109,7 +108,7 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
             LaunchedEffect(Unit) {
                 viewModel.effect.collect { effect ->
                     when (effect) {
-                        is MapEffect.Confirmed -> {
+                        is MapEffect.Chosen -> {
                             navController.previousBackStackEntry?.savedStateHandle?.apply {
                                 set("selectedLat", effect.point.latitude)
                                 set("selectedLon", effect.point.longitude)

@@ -48,9 +48,14 @@ class MapViewModel : ViewModel() {
                     val point = _state.value.lastPlacemark
                     if (point != null) {
                         val address = searchAddress(point)
-                        _effect.emit(MapEffect.Confirmed(point, address))
-                        _state.update { it.copy(lastPlacemark = null) }
+                        _effect.emit(MapEffect.Chosen(point, address))
                     }
+                }
+            }
+            is MapEvent.OnCurrentLocation -> {
+                if (!state.value.initialLocationSet){
+                    Log.d("MapViewModel", "OnCurrentLocation ${event.point.latitude}")
+                    _state.update { it.copy(cameraPosition = event.point, zoom = 15f, initialLocationSet = true) }
                 }
             }
 
